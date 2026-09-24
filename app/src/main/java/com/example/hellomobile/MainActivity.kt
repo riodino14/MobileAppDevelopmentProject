@@ -3,126 +3,186 @@ package com.example.hellomobile
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import java.util.Locale
 
+
+// Student class
+data class Student(
+    val name: String,
+    val id: String,
+    val gpa: String
+)
+
+
+// Main Activity
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        enableEdgeToEdge()
+
         setContent {
-            BMICalculator()
+            MaterialTheme {
+                StudentList()
+            }
         }
     }
 }
 
+
+// StudentList function
 @Composable
-fun BMICalculator() {
+fun StudentList() {
 
-    // State untuk menyimpan berat badan
-    var weight by remember { mutableStateOf("") }
+    // TextField states
+    var name by remember { mutableStateOf("") }
+    var id by remember { mutableStateOf("") }
+    var gpa by remember { mutableStateOf("") }
 
-    // State untuk menyimpan tinggi badan
-    var height by remember { mutableStateOf("") }
+    // Student list
+    val students = remember {
+        mutableStateListOf<Student>()
+    }
 
-    // State untuk menyimpan hasil
-    var result by remember { mutableStateOf("") }
+    // Controls whether the output is displayed
+    var showOutput by remember {
+        mutableStateOf(false)
+    }
+
 
     Column(
         modifier = Modifier
-            .padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = 40.dp,
-                bottom = 16.dp
-            ),
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
         // Title
         Text(
-            text = "BMI Calculator"
+            text = "Student Information",
+            style = MaterialTheme.typography.headlineSmall
         )
 
-        // Weight input
+
+        // Name TextField
         OutlinedTextField(
-            value = weight,
-            onValueChange = { weight = it },
+            value = name,
+            onValueChange = {
+                name = it
+            },
             label = {
-                Text("Weight (kg)")
+                Text("Name")
             },
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Height input
+
+        // ID TextField
         OutlinedTextField(
-            value = height,
-            onValueChange = { height = it },
+            value = id,
+            onValueChange = {
+                id = it
+            },
             label = {
-                Text("Height (cm)")
+                Text("ID")
             },
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Calculate button
+
+        // GPA TextField
+        OutlinedTextField(
+            value = gpa,
+            onValueChange = {
+                gpa = it
+            },
+            label = {
+                Text("GPA")
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+
+        // Input Button
         Button(
             onClick = {
 
-                // Convert String to Double
-                val weightValue = weight.toDoubleOrNull()
-                val heightValue = height.toDoubleOrNull()
+                // Add a new Student object to the list
+                students.add(
+                    Student(
+                        name = name,
+                        id = id,
+                        gpa = gpa
+                    )
+                )
 
-                // Validate input
-                if (
-                    weightValue != null &&
-                    heightValue != null &&
-                    heightValue > 0
-                ) {
+                // Clear the input fields
+                name = ""
+                id = ""
+                gpa = ""
 
-                    // Convert cm to meter
-                    val heightMeter = heightValue / 100
+                // Hide previous output
+                showOutput = false
+            },
 
-                    // Calculate BMI
-                    val bmi = weightValue /
-                            (heightMeter * heightMeter)
-
-                    // Display result
-                    result = "BMI: ${
-                        String.format(
-                            Locale.US,
-                            "%.2f",
-                            bmi
-                        )
-                    }"
-
-                } else {
-
-                    // Display error
-                    result = "Please enter valid numbers!"
-                }
-            }
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Calculate BMI")
+            Text("Input")
         }
 
-        // Display result
-        Text(
-            text = result,
-            modifier = Modifier.padding(top = 16.dp)
-        )
+
+        // Output Button
+        Button(
+            onClick = {
+                showOutput = true
+            },
+
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Output")
+        }
+
+
+        // Display students
+        if (showOutput) {
+
+            Text(
+                text = "Student List",
+                style = MaterialTheme.typography.titleLarge
+            )
+
+
+            students.forEachIndexed { index, student ->
+
+                Text(
+                    text = "${index + 1}. Name: ${student.name}\n" +
+                            "   ID: ${student.id}\n" +
+                            "   GPA: ${student.gpa}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
     }
 }
