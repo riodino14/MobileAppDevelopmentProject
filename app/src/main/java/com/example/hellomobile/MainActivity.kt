@@ -6,9 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -22,25 +24,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-
-// Student class
+// Data model mahasiswa
 data class Student(
     val name: String,
     val id: String,
     val gpa: String
 )
 
-
 // Main Activity
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         enableEdgeToEdge()
-
         setContent {
             MaterialTheme {
                 StudentList()
@@ -49,138 +47,108 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-// StudentList function
+// Composable function
 @Composable
 fun StudentList() {
-
-    // TextField states
+    // State input form
     var name by remember { mutableStateOf("") }
     var id by remember { mutableStateOf("") }
     var gpa by remember { mutableStateOf("") }
 
-    // Student list
+    // List penampung data mahasiswa
     val students = remember {
         mutableStateListOf<Student>()
     }
 
-    // Controls whether the output is displayed
+    // State untuk mengontrol visibilitas output
     var showOutput by remember {
         mutableStateOf(false)
     }
 
-
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .safeDrawingPadding() // Mencegah tampilan menabrak status bar / jam atas
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
-
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
-        // Title
-        Text(
-            text = "Student Information",
-            style = MaterialTheme.typography.headlineSmall
-        )
-
-
-        // Name TextField
+        // TextField Name
         OutlinedTextField(
             value = name,
-            onValueChange = {
-                name = it
-            },
-            label = {
-                Text("Name")
-            },
+            onValueChange = { name = it },
+            label = { Text("Name") },
             modifier = Modifier.fillMaxWidth()
         )
 
-
-        // ID TextField
+        // TextField ID
         OutlinedTextField(
             value = id,
-            onValueChange = {
-                id = it
-            },
-            label = {
-                Text("ID")
-            },
+            onValueChange = { id = it },
+            label = { Text("ID") },
             modifier = Modifier.fillMaxWidth()
         )
 
-
-        // GPA TextField
+        // TextField GPA
         OutlinedTextField(
             value = gpa,
-            onValueChange = {
-                gpa = it
-            },
-            label = {
-                Text("GPA")
-            },
+            onValueChange = { gpa = it },
+            label = { Text("GPA") },
             modifier = Modifier.fillMaxWidth()
         )
 
-
-        // Input Button
-        Button(
-            onClick = {
-
-                // Add a new Student object to the list
-                students.add(
-                    Student(
-                        name = name,
-                        id = id,
-                        gpa = gpa
-                    )
-                )
-
-                // Clear the input fields
-                name = ""
-                id = ""
-                gpa = ""
-
-                // Hide previous output
-                showOutput = false
-            },
-
-            modifier = Modifier.fillMaxWidth()
+        // Tombol Input & Output berdampingan
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Input")
+            // Button Input
+            Button(
+                onClick = {
+                    if (name.isNotBlank() && id.isNotBlank() && gpa.isNotBlank()) {
+                        students.add(
+                            Student(
+                                name = name,
+                                id = id,
+                                gpa = gpa
+                            )
+                        )
+                        // Kosongkan form setelah input
+                        name = ""
+                        id = ""
+                        gpa = ""
+                        showOutput = false
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Input")
+            }
+
+            // Button Output
+            Button(
+                onClick = {
+                    showOutput = true
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Output")
+            }
         }
 
-
-        // Output Button
-        Button(
-            onClick = {
-                showOutput = true
-            },
-
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Output")
-        }
-
-
-        // Display students
+        // Tampilan daftar mahasiswa setelah tombol Output diklik
         if (showOutput) {
-
             Text(
-                text = "Student List",
-                style = MaterialTheme.typography.titleLarge
+                text = "Student List:",
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 8.dp)
             )
 
-
             students.forEachIndexed { index, student ->
-
                 Text(
-                    text = "${index + 1}. Name: ${student.name}\n" +
-                            "   ID: ${student.id}\n" +
-                            "   GPA: ${student.gpa}",
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "${index + 1}. Name: ${student.name}, ID: ${student.id}, GPA: ${student.gpa}",
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
