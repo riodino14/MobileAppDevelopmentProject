@@ -1,155 +1,310 @@
+
 package com.example.hellomobile
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.safeDrawingPadding
 
-// Data model mahasiswa
-data class Student(
+
+data class RegistrationSummary(
     val name: String,
-    val id: String,
-    val gpa: String
+    val studentId: String,
+    val plan: String,
+    val notifications: Boolean,
+    val agreed: Boolean
 )
 
-// Main Activity
+fun validateRegistration(
+    name: String,
+    studentId: String,
+    agreed: Boolean
+): String? {
+    return when {
+        name.isBlank() -> "Please enter your name."
+        studentId.isBlank() -> "Please enter your Student ID."
+        !agreed -> "You must agree to the terms."
+        else -> null
+    }
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
         setContent {
             MaterialTheme {
-                StudentList()
+                StudentRegistrationScreen()
             }
         }
     }
 }
 
-// Composable function
 @Composable
-fun StudentList() {
-    // State input form
+fun StudentRegistrationScreen() {
+    val context = LocalContext.current
+
     var name by remember { mutableStateOf("") }
-    var id by remember { mutableStateOf("") }
-    var gpa by remember { mutableStateOf("") }
+    var studentId by remember { mutableStateOf("") }
+    var selectedPlan by remember { mutableStateOf("Standard") }
+    var notifications by remember { mutableStateOf(true) }
+    var agreed by remember { mutableStateOf(false) }
 
-    // List penampung data mahasiswa
-    val students = remember {
-        mutableStateListOf<Student>()
+    var summary by remember {
+        mutableStateOf<RegistrationSummary?>(null)
     }
 
-    // State untuk mengontrol visibilitas output
-    var showOutput by remember {
-        mutableStateOf(false)
-    }
+    val plans = listOf("Basic", "Standard", "Expert")
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .safeDrawingPadding() // Mencegah tampilan menabrak status bar / jam atas
+            .safeDrawingPadding()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(16.dp)
     ) {
-        // TextField Name
+        Text(
+            text = "Student Registration",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = {
+                name = it
+                summary = null
+            },
             label = { Text("Name") },
+            singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
 
-        // TextField ID
+        Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
-            value = id,
-            onValueChange = { id = it },
-            label = { Text("ID") },
+            value = studentId,
+            onValueChange = {
+                studentId = it
+                summary = null
+            },
+            label = { Text("Student ID") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            ),
             modifier = Modifier.fillMaxWidth()
         )
 
-        // TextField GPA
-        OutlinedTextField(
-            value = gpa,
-            onValueChange = { gpa = it },
-            label = { Text("GPA") },
-            modifier = Modifier.fillMaxWidth()
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text(
+            text = "Select Plan",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium
         )
 
-        // Tombol Input & Output berdampingan
+        Spacer(modifier = Modifier.height(8.dp))
+
+        plans.forEach { plan ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        selectedPlan = plan
+                        summary = null
+                    }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = selectedPlan == plan,
+                    onClick = null
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(text = plan)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Button Input
+            Text(
+                text = "Notifications: " +
+                        if (notifications) "ON" else "OFF",
+                fontSize = 16.sp
+            )
+
+            Switch(
+                checked = notifications,
+                onCheckedChange = {
+                    notifications = it
+                    summary = null
+                }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = agreed,
+                onCheckedChange = {
+                    agreed = it
+                    summary = null
+                }
+            )
+
+            Text(
+                text = "I agree to the terms.",
+                modifier = Modifier.clickable {
+                    agreed = !agreed
+                    summary = null
+                }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Button(
                 onClick = {
-                    if (name.isNotBlank() && id.isNotBlank() && gpa.isNotBlank()) {
-                        students.add(
-                            Student(
-                                name = name,
-                                id = id,
-                                gpa = gpa
-                            )
+                    val error = validateRegistration(
+                        name,
+                        studentId,
+                        agreed
+                    )
+
+                    if (error != null) {
+                        summary = null
+
+                        Toast.makeText(
+                            context,
+                            error,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        summary = RegistrationSummary(
+                            name = name.trim(),
+                            studentId = studentId.trim(),
+                            plan = selectedPlan,
+                            notifications = notifications,
+                            agreed = agreed
                         )
-                        // Kosongkan form setelah input
-                        name = ""
-                        id = ""
-                        gpa = ""
-                        showOutput = false
                     }
                 },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Input")
+                Text("Preview")
             }
 
-            // Button Output
+
             Button(
                 onClick = {
-                    showOutput = true
+                    val error = validateRegistration(
+                        name,
+                        studentId,
+                        agreed
+                    )
+
+                    if (error == null) {
+                        Toast.makeText(
+                            context,
+                            "Submitted",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Please fix errors",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (agreed)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant,
+
+                    contentColor = if (agreed)
+                        MaterialTheme.colorScheme.onPrimary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                ),
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Output")
+                Text("Submit")
             }
         }
 
-        // Tampilan daftar mahasiswa setelah tombol Output diklik
-        if (showOutput) {
-            Text(
-                text = "Student List:",
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-            students.forEachIndexed { index, student ->
-                Text(
-                    text = "${index + 1}. Name: ${student.name}, ID: ${student.id}, GPA: ${student.gpa}",
-                    style = MaterialTheme.typography.bodyMedium
+        HorizontalDivider()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        summary?.let { result ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 4.dp
                 )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Registration Summary",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    HorizontalDivider()
+
+                    Text("Name: ${result.name}")
+                    Text("ID: ${result.studentId}")
+                    Text("Plan: ${result.plan}")
+
+                    Text(
+                        "Notifications: " +
+                                if (result.notifications) "ON" else "OFF"
+                    )
+
+                    Text("Agreed: ${result.agreed}")
+                }
             }
         }
     }
